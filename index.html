@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>DEMARCACION EN EL DEPARTAMENTO DE ORURO</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/ORUROWGS84_2.js"></script>
+        <script src="data/LEYORUROWGS84_3.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-18.39730730744033,-68.2106800469772],[-17.511901818642073,-66.30569156477944]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var title = new L.Control({'position':'topright'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>DEMARCACION EN EL DEPARTAMENTO DE ORURO</h2>';
+        };
+        title.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_ESRITopo_0');
+        map.getPane('pane_ESRITopo_0').style.zIndex = 400;
+        var layer_ESRITopo_0 = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+            pane: 'pane_ESRITopo_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_ESRITopo_0;
+        map.addLayer(layer_ESRITopo_0);
+        map.createPane('pane_GoogleSatellite_1');
+        map.getPane('pane_GoogleSatellite_1').style.zIndex = 401;
+        var layer_GoogleSatellite_1 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_1',
+            opacity: 1.0,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleSatellite_1;
+        map.addLayer(layer_GoogleSatellite_1);
+        function pop_ORUROWGS84_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['C_UT'] !== null ? autolinker.link(feature.properties['C_UT'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">DEPARTAMEN</th>\
+                        <td>' + (feature.properties['DEPARTAMEN'] !== null ? autolinker.link(feature.properties['DEPARTAMEN'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PROVINCIA</th>\
+                        <td>' + (feature.properties['PROVINCIA'] !== null ? autolinker.link(feature.properties['PROVINCIA'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">MUNICIPIO</th>\
+                        <td>' + (feature.properties['MUNICIPIO'] !== null ? autolinker.link(feature.properties['MUNICIPIO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">N°_LEY</th>\
+                        <td>' + (feature.properties['N°_LEY'] !== null ? autolinker.link(feature.properties['N°_LEY'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FECHA_LEY'] !== null ? autolinker.link(feature.properties['FECHA_LEY'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ZONA'] !== null ? autolinker.link(feature.properties['ZONA'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ID_UT'] !== null ? autolinker.link(feature.properties['ID_UT'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BL_COMLI_M'] !== null ? autolinker.link(feature.properties['BL_COMLI_M'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CAPITAL'] !== null ? autolinker.link(feature.properties['CAPITAL'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">C_SIOT</th>\
+                        <td>' + (feature.properties['C_SIOT'] !== null ? autolinker.link(feature.properties['C_SIOT'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TIOC_AIOC'] !== null ? autolinker.link(feature.properties['TIOC_AIOC'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">DOCUEMNTO</th>\
+                        <td>' + (feature.properties['DOCUEMNTO'] !== null ? autolinker.link(feature.properties['DOCUEMNTO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_ORUROWGS84_2_0() {
+            return {
+                pane: 'pane_ORUROWGS84_2',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.3914901960784314)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(196,60,57,0.3798039215686274)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_ORUROWGS84_2');
+        map.getPane('pane_ORUROWGS84_2').style.zIndex = 402;
+        map.getPane('pane_ORUROWGS84_2').style['mix-blend-mode'] = 'darken';
+        var layer_ORUROWGS84_2 = new L.geoJson(json_ORUROWGS84_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_ORUROWGS84_2',
+            layerName: 'layer_ORUROWGS84_2',
+            pane: 'pane_ORUROWGS84_2',
+            onEachFeature: pop_ORUROWGS84_2,
+            style: style_ORUROWGS84_2_0,
+        });
+        bounds_group.addLayer(layer_ORUROWGS84_2);
+        map.addLayer(layer_ORUROWGS84_2);
+        function pop_LEYORUROWGS84_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(feature.properties['OBJECTID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">COD_SIOT</th>\
+                        <td>' + (feature.properties['COD_SIOT'] !== null ? autolinker.link(feature.properties['COD_SIOT'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ID_LIMITE'] !== null ? autolinker.link(feature.properties['ID_LIMITE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ID_TRAMO'] !== null ? autolinker.link(feature.properties['ID_TRAMO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FECHA_LEY'] !== null ? autolinker.link(feature.properties['FECHA_LEY'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ID_EXP'] !== null ? autolinker.link(feature.properties['ID_EXP'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LIMITE'] !== null ? autolinker.link(feature.properties['LIMITE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ESTADO'] !== null ? autolinker.link(feature.properties['ESTADO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">TIPO_LIMIT</th>\
+                        <td>' + (feature.properties['TIPO_LIMIT'] !== null ? autolinker.link(feature.properties['TIPO_LIMIT'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? autolinker.link(feature.properties['SHAPE_Leng'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Z_UTM'] !== null ? autolinker.link(feature.properties['Z_UTM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">LEY</th>\
+                        <td>' + (feature.properties['LEY'] !== null ? autolinker.link(feature.properties['LEY'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">DOCUMENTO</th>\
+                        <td>' + (feature.properties['DOCUMENTO'] !== null ? autolinker.link(feature.properties['DOCUMENTO'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">ACTAS</th>\
+                        <td>' + (feature.properties['ACTAS'] !== null ? autolinker.link(feature.properties['ACTAS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_LEYORUROWGS84_3_0() {
+            return {
+                pane: 'pane_LEYORUROWGS84_3',
+                opacity: 1,
+                color: 'rgba(227,26,28,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 3.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_LEYORUROWGS84_3');
+        map.getPane('pane_LEYORUROWGS84_3').style.zIndex = 403;
+        map.getPane('pane_LEYORUROWGS84_3').style['mix-blend-mode'] = 'normal';
+        var layer_LEYORUROWGS84_3 = new L.geoJson(json_LEYORUROWGS84_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_LEYORUROWGS84_3',
+            layerName: 'layer_LEYORUROWGS84_3',
+            pane: 'pane_LEYORUROWGS84_3',
+            onEachFeature: pop_LEYORUROWGS84_3,
+            style: style_LEYORUROWGS84_3_0,
+        });
+        bounds_group.addLayer(layer_LEYORUROWGS84_3);
+        map.addLayer(layer_LEYORUROWGS84_3);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var baseMaps = {};
+        var overlaysTree = [
+            {label: '<img src="legend/LEYORUROWGS84_3.png" /> LEY ORURO WGS84', layer: layer_LEYORUROWGS84_3},
+            {label: '<img src="legend/ORUROWGS84_2.png" /> ORURO WGS84', layer: layer_ORUROWGS84_2},
+            {label: "Google Satellite", layer: layer_GoogleSatellite_1},
+            {label: "ESRI Topo", layer: layer_ESRITopo_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+		document.addEventListener("DOMContentLoaded", function() {
+            // set new Layers List height which considers toggle icon
+            function newLayersListHeight() {
+                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
+                if (layerScrollbarElement) {
+                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
+                    var originalHeight = layersListElement.style.height 
+                        || window.getComputedStyle(layersListElement).height;
+                    var newHeight = parseFloat(originalHeight) - 50;
+                    layersListElement.style.height = newHeight + 'px';
+                }
+            }
+            var isLayersListExpanded = true;
+            var controlLayersElement = document.querySelector('.leaflet-control-layers');
+            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
+            // toggle Collapsed/Expanded and apply new Layers List height
+            toggleLayerControl.addEventListener('click', function() {
+                if (isLayersListExpanded) {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                } else {
+                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+                }
+                isLayersListExpanded = !isLayersListExpanded;
+                newLayersListHeight()
+            });	
+			// apply new Layers List height if toggle layerstree
+			if (controlLayersElement) {
+				controlLayersElement.addEventListener('click', function(event) {
+					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
+					if (toggleLayerHeaderPointer) {
+						newLayersListHeight();
+					}
+				});
+			}
+            // Collapsed/Expanded at Start to apply new height
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            // Collapsed touch/small screen
+            var isSmallScreen = window.innerWidth < 650;
+            if (isSmallScreen) {
+                setTimeout(function() {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                    isLayersListExpanded = !isLayersListExpanded;
+                }, 500);
+            }  
+        });       
+        setBounds();
+        map.addControl(new L.Control.Search({
+            layer: layer_ORUROWGS84_2,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'MUNICIPIO'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"PROVINCIA": "str","MUNICIPIO": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_PROVINCIA = document.createElement('div');
+            div_PROVINCIA.id = "div_PROVINCIA";
+            div_PROVINCIA.className= "filterselect";
+            document.getElementById("menu").appendChild(div_PROVINCIA);
+            sel_PROVINCIA = document.createElement('select');
+            sel_PROVINCIA.multiple = true;
+            sel_PROVINCIA.size = 10;
+            sel_PROVINCIA.id = "sel_PROVINCIA";
+            var PROVINCIA_options_str = "<option value='' unselected></option>";
+            sel_PROVINCIA.onchange = function(){filterFunc()};
+            PROVINCIA_options_str  += '<option value="Abaroa">Abaroa</option>';
+            PROVINCIA_options_str  += '<option value="Carangas">Carangas</option>';
+            PROVINCIA_options_str  += '<option value="Cercado">Cercado</option>';
+            PROVINCIA_options_str  += '<option value="Ladislao Cabrera">Ladislao Cabrera</option>';
+            PROVINCIA_options_str  += '<option value="Litoral">Litoral</option>';
+            PROVINCIA_options_str  += '<option value="Mejillones">Mejillones</option>';
+            PROVINCIA_options_str  += '<option value="Nor Carangas">Nor Carangas</option>';
+            PROVINCIA_options_str  += '<option value="Pantaleon Dalence">Pantaleon Dalence</option>';
+            PROVINCIA_options_str  += '<option value="Poopo">Poopo</option>';
+            PROVINCIA_options_str  += '<option value="Sabaya">Sabaya</option>';
+            PROVINCIA_options_str  += '<option value="Sajama">Sajama</option>';
+            PROVINCIA_options_str  += '<option value="Salar de Coipasa">Salar de Coipasa</option>';
+            PROVINCIA_options_str  += '<option value="Salar de Uyuni">Salar de Uyuni</option>';
+            PROVINCIA_options_str  += '<option value="San Pedro De Totora">San Pedro De Totora</option>';
+            PROVINCIA_options_str  += '<option value="Saucari">Saucari</option>';
+            PROVINCIA_options_str  += '<option value="Sebastian Pagador">Sebastian Pagador</option>';
+            PROVINCIA_options_str  += '<option value="Sur Carangas">Sur Carangas</option>';
+            PROVINCIA_options_str  += '<option value="Tomas Barron">Tomas Barron</option>';
+            sel_PROVINCIA.innerHTML = PROVINCIA_options_str;
+            div_PROVINCIA.appendChild(sel_PROVINCIA);
+            var lab_PROVINCIA = document.createElement('div');
+            lab_PROVINCIA.innerHTML = 'PROVINCIA';
+            lab_PROVINCIA.className = 'filterlabel';
+            div_PROVINCIA.appendChild(lab_PROVINCIA);
+            var reset_PROVINCIA = document.createElement('div');
+            reset_PROVINCIA.innerHTML = 'clear filter';
+            reset_PROVINCIA.className = 'filterlabel';
+            reset_PROVINCIA.onclick = function() {
+                var options = document.getElementById("sel_PROVINCIA").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_PROVINCIA.appendChild(reset_PROVINCIA);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_MUNICIPIO = document.createElement('div');
+            div_MUNICIPIO.id = "div_MUNICIPIO";
+            div_MUNICIPIO.className= "filterselect";
+            document.getElementById("menu").appendChild(div_MUNICIPIO);
+            sel_MUNICIPIO = document.createElement('select');
+            sel_MUNICIPIO.multiple = true;
+            sel_MUNICIPIO.size = 10;
+            sel_MUNICIPIO.id = "sel_MUNICIPIO";
+            var MUNICIPIO_options_str = "<option value='' unselected></option>";
+            sel_MUNICIPIO.onchange = function(){filterFunc()};
+            MUNICIPIO_options_str  += '<option value="NULL">NULL</option>';
+            MUNICIPIO_options_str  += '<option value="Andamarca">Andamarca</option>';
+            MUNICIPIO_options_str  += '<option value="Antequera">Antequera</option>';
+            MUNICIPIO_options_str  += '<option value="Belén de Andamarca">Belén de Andamarca</option>';
+            MUNICIPIO_options_str  += '<option value="Caracollo">Caracollo</option>';
+            MUNICIPIO_options_str  += '<option value="Carangas">Carangas</option>';
+            MUNICIPIO_options_str  += '<option value="Challapata">Challapata</option>';
+            MUNICIPIO_options_str  += '<option value="Choquecota">Choquecota</option>';
+            MUNICIPIO_options_str  += '<option value="Coipasa">Coipasa</option>';
+            MUNICIPIO_options_str  += '<option value="Corque">Corque</option>';
+            MUNICIPIO_options_str  += '<option value="Cruz de Machacamarca">Cruz de Machacamarca</option>';
+            MUNICIPIO_options_str  += '<option value="Curahuara de Carangas">Curahuara de Carangas</option>';
+            MUNICIPIO_options_str  += '<option value="El Choro">El Choro</option>';
+            MUNICIPIO_options_str  += '<option value="Escara">Escara</option>';
+            MUNICIPIO_options_str  += '<option value="Esmeralda">Esmeralda</option>';
+            MUNICIPIO_options_str  += '<option value="Eucaliptus">Eucaliptus</option>';
+            MUNICIPIO_options_str  += '<option value="Huachacalla">Huachacalla</option>';
+            MUNICIPIO_options_str  += '<option value="Huanuni">Huanuni</option>';
+            MUNICIPIO_options_str  += '<option value="La Rivera">La Rivera</option>';
+            MUNICIPIO_options_str  += '<option value="Machacamarca">Machacamarca</option>';
+            MUNICIPIO_options_str  += '<option value="Oruro">Oruro</option>';
+            MUNICIPIO_options_str  += '<option value="Pampa Aullagas">Pampa Aullagas</option>';
+            MUNICIPIO_options_str  += '<option value="Paria">Paria</option>';
+            MUNICIPIO_options_str  += '<option value="Pazña">Pazña</option>';
+            MUNICIPIO_options_str  += '<option value="Poopó">Poopó</option>';
+            MUNICIPIO_options_str  += '<option value="Sabaya">Sabaya</option>';
+            MUNICIPIO_options_str  += '<option value="Salinas de Garci Mendoza">Salinas de Garci Mendoza</option>';
+            MUNICIPIO_options_str  += '<option value="Santiago de Huari">Santiago de Huari</option>';
+            MUNICIPIO_options_str  += '<option value="Santiago de Huayllamarca">Santiago de Huayllamarca</option>';
+            MUNICIPIO_options_str  += '<option value="Santuario de Quillacas">Santuario de Quillacas</option>';
+            MUNICIPIO_options_str  += '<option value="Todos Santos">Todos Santos</option>';
+            MUNICIPIO_options_str  += '<option value="Toledo">Toledo</option>';
+            MUNICIPIO_options_str  += '<option value="Totora">Totora</option>';
+            MUNICIPIO_options_str  += '<option value="Turco">Turco</option>';
+            MUNICIPIO_options_str  += '<option value="Uru Chipaya">Uru Chipaya</option>';
+            MUNICIPIO_options_str  += '<option value="Yunguyo del Litoral">Yunguyo del Litoral</option>';
+            sel_MUNICIPIO.innerHTML = MUNICIPIO_options_str;
+            div_MUNICIPIO.appendChild(sel_MUNICIPIO);
+            var lab_MUNICIPIO = document.createElement('div');
+            lab_MUNICIPIO.innerHTML = 'MUNICIPIO';
+            lab_MUNICIPIO.className = 'filterlabel';
+            div_MUNICIPIO.appendChild(lab_MUNICIPIO);
+            var reset_MUNICIPIO = document.createElement('div');
+            reset_MUNICIPIO.innerHTML = 'clear filter';
+            reset_MUNICIPIO.className = 'filterlabel';
+            reset_MUNICIPIO.onclick = function() {
+                var options = document.getElementById("sel_MUNICIPIO").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_MUNICIPIO.appendChild(reset_MUNICIPIO);
+        resetLabels([layer_ORUROWGS84_2]);
+        map.on("zoomend", function(){
+            resetLabels([layer_ORUROWGS84_2]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_ORUROWGS84_2]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_ORUROWGS84_2]);
+        });
+        </script>
+    </body>
+</html>
